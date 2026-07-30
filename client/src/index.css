@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+
+  --color-rose-50: #fff1f2;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e11d48;
+
+  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-800);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.15s, opacity 0.15s;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background-color: var(--color-blue-600);
+    color: white;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-blue-700);
+  }
+  .btn-secondary {
+    background-color: white;
+    color: var(--color-slate-700);
+    border: 1px solid var(--color-slate-200);
+  }
+  .btn-secondary:hover {
+    background-color: var(--color-slate-50);
+  }
+  .btn-danger {
+    background-color: var(--color-rose-500);
+    color: white;
+  }
+  .btn-danger:hover {
+    background-color: var(--color-rose-600);
+  }
+  .btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--color-slate-200);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+  }
+
+  .input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-slate-200);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+  .input:focus {
+    border-color: var(--color-blue-500);
+    box-shadow: 0 0 0 3px var(--color-blue-100);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .badge-green {
+    background-color: var(--color-emerald-50);
+    color: var(--color-emerald-600);
+  }
+  .badge-blue {
+    background-color: var(--color-blue-50);
+    color: var(--color-blue-700);
+  }
+  .badge-amber {
+    background-color: var(--color-amber-50);
+    color: var(--color-amber-600);
+  }
+  .badge-rose {
+    background-color: var(--color-rose-50);
+    color: var(--color-rose-600);
+  }
+  .badge-slate {
+    background-color: var(--color-slate-100);
+    color: var(--color-slate-600);
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-slate-500);
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .sidebar-link:hover {
+    background-color: var(--color-slate-100);
+    color: var(--color-slate-800);
+  }
+  .sidebar-link.active {
+    background-color: var(--color-blue-50);
+    color: var(--color-blue-700);
+    font-weight: 500;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .table thead {
+    background-color: var(--color-slate-50);
+  }
+  .table th {
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-slate-500);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--color-slate-200);
+  }
+  .table td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--color-slate-100);
+    color: var(--color-slate-700);
+  }
+  .table tbody tr:hover {
+    background-color: var(--color-slate-50);
+  }
+
+  .spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--color-slate-200);
+    border-top-color: var(--color-blue-600);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+}
