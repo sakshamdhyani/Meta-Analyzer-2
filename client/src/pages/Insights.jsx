@@ -171,7 +171,7 @@ export default function Insights() {
                         <td>{acc.impressions.toLocaleString()}</td>
                         <td>{acc.clicks.toLocaleString()}</td>
                         <td>{acc.ctr.toFixed(2)}%</td>
-                        <td>{formatCurrency(acc.cpc)}</td>
+                        <td>{formatCurrency(acc.cpc, acc.currency)}</td>
                         <td>{acc.conversions.toLocaleString()}</td>
                         <td>{acc.roas.toFixed(2)}x</td>
                       </tr>

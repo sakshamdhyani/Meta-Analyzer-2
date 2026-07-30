@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { fetchCampaigns, syncAccount, fetchTokens } from "../lib/api";
 import { useApp } from "../context/AppContext";
-import TreeNode from "../components/ui/TreeNode";
+import CampaignTable from "../components/ui/CampaignTable";
 import { LoadingSpinner, EmptyState, ErrorMessage } from "../components/ui/Feedback";
-import { formatCurrency } from "../lib/utils";
-import Detail from "../components/ui/Detail";
 
 export default function Campaigns() {
   const { selectedTokenId, setSelectedTokenId, toast$ } = useApp();
@@ -12,13 +10,9 @@ export default function Campaigns() {
   const [tree, setTree] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
-  const [selectedNode, setSelectedNode] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [adAccountFilter, setAdAccountFilter] = useState("");
   const [syncForm, setSyncForm] = useState({ adAccountId: "", includeAds: true });
-
-  const selectedToken = tokens.find((t) => t._id === selectedTokenId);
 
   const load = useCallback(async () => {
     if (!selectedTokenId) { setTree([]); return; }
@@ -55,17 +49,26 @@ export default function Campaigns() {
     fetchTokens().then(({ data }) => setTokens(data)).catch(() => {});
   }, []);
 
-  const handleSelect = (id, node) => {
-    setSelectedId(id);
-    setSelectedNode(node);
-  };
+  // Build a map of adAccountId → currency from the selected token's linked accounts
+  const currencyMap = useMemo(() => {
+    const token = tokens.find((t) => t._id === selectedTokenId);
+    const map = {};
+    (token?.adAccounts || []).forEach((a) => {
+      if (a.currency) map[a.adAccountId] = a.currency;
+    });
+    return map;
+  }, [tokens, selectedTokenId]);
+
+  const totalCampaigns = countByType(tree, "campaign");
+  const totalAdSets = countByType(tree, "adset");
+  const totalAds = countByType(tree, "ad");
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Campaigns</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Sync and browse campaigns, ad sets, and ads</p>
+          <p className="text-sm text-slate-500 mt-0.5">Browse and manage campaigns, ad sets, and ads</p>
         </div>
         <div className="flex gap-2">
           <select className="input max-w-xs" value={selectedTokenId || ""} onChange={(e) => { setSelectedTokenId(e.target.value); setAdAccountFilter(""); }}>
@@ -80,6 +83,24 @@ export default function Campaigns() {
           </button>
         </div>
       </div>
+
+      {/* Stats */}
+      {tree.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="card">
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Campaigns</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{totalCampaigns}</p>
+          </div>
+          <div className="card">
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Ad Sets</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{totalAdSets}</p>
+          </div>
+          <div className="card">
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Ads</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{totalAds}</p>
+          </div>
+        </div>
+      )}
 
       {/* Sync form */}
       {selectedTokenId && (
@@ -108,48 +129,18 @@ export default function Campaigns() {
       ) : !selectedTokenId ? (
         <EmptyState message="Select a token and sync campaigns to get started." />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Tree */}
-          <div className="lg:col-span-2">
-            <div className="card !p-2">
-              {tree.length === 0 ? (
-                <EmptyState message="No campaigns found. Sync first." />
-              ) : (
-                tree.map((campaign) => (
-                  <TreeNode key={campaign.campaignId} node={campaign} selectedId={selectedId} onSelect={handleSelect} />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Detail panel */}
-          <div>
-            {selectedNode ? (
-              <div className="card space-y-3">
-                <h3 className="font-medium text-slate-900">{selectedNode.name}</h3>
-                <div className="space-y-1.5">
-                  <Detail label="Type" value={selectedNode.type} />
-                  <Detail label="ID" value={selectedNode.campaignId || selectedNode.adsetId || selectedNode.adId} mono />
-                  <Detail label="Status" value={selectedNode.status} />
-                  <Detail label="Effective" value={selectedNode.effectiveStatus} />
-                  {selectedNode.dailyBudget && <Detail label="Daily Budget" value={formatCurrency(selectedNode.dailyBudget / 100)} />}
-                  {selectedNode.lifetimeBudget && <Detail label="Lifetime Budget" value={formatCurrency(selectedNode.lifetimeBudget / 100)} />}
-                  {selectedNode.objective && <Detail label="Objective" value={selectedNode.objective} />}
-                  {selectedNode.billingEvent && <Detail label="Billing" value={selectedNode.billingEvent} />}
-                  {selectedNode.optimizationGoal && <Detail label="Optimization" value={selectedNode.optimizationGoal} />}
-                  {selectedNode.startTime && <Detail label="Start" value={new Date(selectedNode.startTime).toLocaleDateString()} />}
-                  {selectedNode.stopTime && <Detail label="End" value={new Date(selectedNode.stopTime).toLocaleDateString()} />}
-                  {selectedNode.updatedTime && <Detail label="Updated" value={new Date(selectedNode.updatedTime).toLocaleString()} />}
-                  {selectedNode.callToAction && <Detail label="CTA" value={selectedNode.callToAction} />}
-                  {selectedNode.linkUrl && <Detail label="Link" value={<a href={selectedNode.linkUrl} target="_blank" rel="noopener" className="text-blue-600 hover:underline break-all">{selectedNode.linkUrl}</a>} />}
-                </div>
-              </div>
-            ) : (
-              <div className="card text-center text-sm text-slate-400">Click an item to view details</div>
-            )}
-          </div>
-        </div>
+        <CampaignTable tree={tree} currencyMap={currencyMap} onSelect={() => {}} />
       )}
     </div>
   );
+}
+
+function countByType(tree, type) {
+  let count = 0;
+  const walk = (node) => {
+    if (node.type === type) count++;
+    (node.children || []).forEach(walk);
+  };
+  tree.forEach(walk);
+  return count;
 }
