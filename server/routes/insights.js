@@ -69,7 +69,12 @@ function normalizeInsightRow(row) {
   const cpa = (row.cost_per_action_type || [])
     .find((c) => c.action_type === "purchase");
   const cpaVal = cpa ? parseFloat(cpa.value || 0) : 0;
-  const revenue = convs * (cpaVal > 0 ? cpaVal : 0);
+
+  // Revenue comes from action_values (total value of purchase actions), not from CPA
+  const revenue = (row.action_values || [])
+    .filter((a) => a.action_type === "purchase")
+    .reduce((s, a) => s + parseFloat(a.value || 0), 0);
+
   const roas = spend > 0 ? revenue / spend : 0;
 
   return {
@@ -112,7 +117,7 @@ async function fetchInsightsForAccount(actId, accessToken, since, until, level =
     time_increment: "1",
     limit: "500",
     level,
-    fields: "spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,reach,frequency",
+    fields: "spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,reach,frequency",
   });
 
   const results = [];
@@ -126,19 +131,19 @@ async function fetchInsightsForAccount(actId, accessToken, since, until, level =
 }
 
 async function fetchCampaignInsights(campaignId, accessToken, since, until) {
-  const url = `https://graph.facebook.com/v19.0/${campaignId}/insights?access_token=${accessToken}&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&time_increment=1&limit=500&fields=spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,reach,frequency`;
+  const url = `https://graph.facebook.com/v19.0/${campaignId}/insights?access_token=${accessToken}&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&time_increment=1&limit=500&fields=spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,reach,frequency`;
   const data = await fbGet(url);
   return (data.data || []).map(normalizeInsightRow);
 }
 
 async function fetchAdSetInsights(adsetId, accessToken, since, until) {
-  const url = `https://graph.facebook.com/v19.0/${adsetId}/insights?access_token=${accessToken}&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&time_increment=1&limit=500&fields=spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,reach,frequency`;
+  const url = `https://graph.facebook.com/v19.0/${adsetId}/insights?access_token=${accessToken}&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&time_increment=1&limit=500&fields=spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,reach,frequency`;
   const data = await fbGet(url);
   return (data.data || []).map(normalizeInsightRow);
 }
 
 async function fetchAdInsights(adId, accessToken, since, until) {
-  const url = `https://graph.facebook.com/v19.0/${adId}/insights?access_token=${accessToken}&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&time_increment=1&limit=500&fields=spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,reach,frequency`;
+  const url = `https://graph.facebook.com/v19.0/${adId}/insights?access_token=${accessToken}&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&time_increment=1&limit=500&fields=spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,reach,frequency`;
   const data = await fbGet(url);
   return (data.data || []).map(normalizeInsightRow);
 }

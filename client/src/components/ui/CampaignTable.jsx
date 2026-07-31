@@ -230,14 +230,34 @@ export default function CampaignTable({ tree, currencyMap = {}, onSelect }) {
     const list = [...visible];
     const d = sortDir === "asc" ? 1 : -1;
     list.sort((a, b) => {
-      const aV = (a[sortKey] ?? "").toString().toLowerCase();
-      const bV = (b[sortKey] ?? "").toString().toLowerCase();
+      const aV = getSortValue(a, sortKey);
+      const bV = getSortValue(b, sortKey);
       if (aV < bV) return -d;
       if (aV > bV) return d;
       return a.depth - b.depth;
     });
     return list;
   }, [visible, sortKey, sortDir]);
+
+  function getSortValue(row, key) {
+    const m = row.metrics || {};
+    switch (key) {
+      case "type":   return (row.type || "").toLowerCase();
+      case "name":   return (row.name || "").toLowerCase();
+      case "status": return (row.status || row.effectiveStatus || "").toLowerCase();
+      case "budget": {
+        const n = row.type === "campaign" ? parseInt(row.lifetimeBudget, 10) : row.type === "adset" ? parseInt(row.dailyBudget, 10) : 0;
+        return isNaN(n) ? 0 : n;
+      }
+      case "spend":   return m.spend || 0;
+      case "impr":    return m.impressions || 0;
+      case "clicks":  return m.clicks || 0;
+      case "ctr":     return m.ctr || 0;
+      case "convs":   return m.conversions || 0;
+      case "roas":    return m.roas || 0;
+      default:        return (row[key] ?? "").toString().toLowerCase();
+    }
+  }
 
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir((p) => (p === "asc" ? "desc" : "asc"));
