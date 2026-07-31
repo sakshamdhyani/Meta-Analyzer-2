@@ -62,17 +62,19 @@ const TYPE_CONFIG = {
 };
 
 const COLS = [
-  { key: "type",     label: "Type",        width: "w-28" },
-  { key: "name",     label: "Name",        width: "min-w-[200px]" },
-  { key: "id",       label: "ID",          width: "w-36" },
-  { key: "status",   label: "Status",      width: "w-28" },
-  { key: "budget",   label: "Budget",      width: "w-28" },
-  { key: "spend",    label: "Spend",       width: "w-28" },
+  { key: "type",     label: "Type",      width: "w-28" },
+  { key: "name",     label: "Name",      width: "min-w-[200px]" },
+  { key: "account",  label: "Account",   width: "min-w-[160px]" },
+  { key: "campaign", label: "Campaign",  width: "min-w-[160px]" },
+  { key: "id",       label: "ID",        width: "w-36" },
+  { key: "status",   label: "Status",    width: "w-28" },
+  { key: "budget",   label: "Budget",    width: "w-28" },
+  { key: "spend",    label: "Spend",     width: "w-28" },
   { key: "impr",     label: "Impressions", width: "w-24" },
-  { key: "clicks",   label: "Clicks",      width: "w-20" },
-  { key: "ctr",      label: "CTR",         width: "w-20" },
-  { key: "convs",    label: "Conv.",       width: "w-20" },
-  { key: "roas",     label: "ROAS",        width: "w-20" },
+  { key: "clicks",   label: "Clicks",    width: "w-20" },
+  { key: "ctr",      label: "CTR",       width: "w-20" },
+  { key: "convs",    label: "Conv.",     width: "w-20" },
+  { key: "roas",     label: "ROAS",      width: "w-20" },
 ];
 
 const TYPE_ICONS = {
@@ -93,6 +95,8 @@ function ExpandedRow({ node, currency = "USD", onSelectDetail }) {
   const rows = [
     ["Type", tc.label],
     ["ID", id],
+    ["Ad Account", node.adAccountName || node.adAccountId || "—"],
+    ...(node.type !== "campaign" ? [["Campaign", node.campaignName || node.campaignId || "—"]] : []),
     ["Status", node.status || node.effectiveStatus || "—"],
     ["Effective Status", node.effectiveStatus || "—"],
     ...(node.type === "campaign"
@@ -242,9 +246,11 @@ export default function CampaignTable({ tree, currencyMap = {}, onSelect }) {
   function getSortValue(row, key) {
     const m = row.metrics || {};
     switch (key) {
-      case "type":   return (row.type || "").toLowerCase();
-      case "name":   return (row.name || "").toLowerCase();
-      case "status": return (row.status || row.effectiveStatus || "").toLowerCase();
+      case "type":     return (row.type || "").toLowerCase();
+      case "name":     return (row.name || "").toLowerCase();
+      case "account":  return (row.adAccountName || row.adAccountId || "").toLowerCase();
+      case "campaign": return (row.campaignName || row.campaignId || "").toLowerCase();
+      case "status":   return (row.status || row.effectiveStatus || "").toLowerCase();
       case "budget": {
         const n = row.type === "campaign" ? parseInt(row.lifetimeBudget, 10) : row.type === "adset" ? parseInt(row.dailyBudget, 10) : 0;
         return isNaN(n) ? 0 : n;
@@ -393,6 +399,20 @@ export default function CampaignTable({ tree, currencyMap = {}, onSelect }) {
                           )}
                         </div>
                       </div>
+                    </td>
+
+                    {/* Ad Account */}
+                    <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                      {row.type === "campaign" ? (row.adAccountName || row.adAccountId || "—") :
+                       row.type === "adset"   ? (row.adAccountName || row.adAccountId || "—") :
+                                               (row.adAccountName || row.adAccountId || "—")}
+                    </td>
+
+                    {/* Campaign */}
+                    <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap max-w-[160px]">
+                      {row.type === "campaign" ? "—" :
+                       row.type === "adset"   ? (row.campaignName || row.campaignId || "—") :
+                                               (row.campaignName || row.campaignId || "—")}
                     </td>
 
                     {/* ID */}

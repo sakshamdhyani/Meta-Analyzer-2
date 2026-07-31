@@ -270,7 +270,23 @@ router.get("/:tokenId", async (req, res) => {
         }
       });
 
-      // Build tree with metrics
+      // Build tree with metrics and parent name maps
+      const campaignIdToName = {};
+      const adAccountIdToName = {};
+      campaigns.forEach((c) => {
+        campaignIdToName[c.campaignId] = c.name;
+        if (c.adAccountId) adAccountIdToName[c.adAccountId] = "";
+      });
+      adAccounts.forEach((acc) => {
+        adAccountIdToName[acc.adAccountId] = acc.name;
+      });
+      // Fill any ad accounts referenced by adsets/ads but not in adAccounts
+      adsets.forEach((as) => {
+        if (as.adAccountId && !(as.adAccountId in adAccountIdToName)) {
+          adAccountIdToName[as.adAccountId] = as.adAccountId;
+        }
+      });
+
       hierarchy.push(
         ...campaigns.map((campaign) => {
           const campMetrics = campaignMetricsMap[campaign.campaignId] || emptyInsights();
@@ -280,10 +296,18 @@ router.get("/:tokenId", async (req, res) => {
               ...adset,
               type: "adset",
               metrics: asMetrics,
+              adAccountId: adset.adAccountId,
+              adAccountName: adAccountIdToName[adset.adAccountId] || "",
+              campaignId: adset.campaignId,
+              campaignName: campaignIdToName[adset.campaignId] || "",
               children: (adsByAdSet.get(adset.adsetId) || []).map((ad) => ({
                 ...ad,
                 type: "ad",
                 metrics: adMetricsMap[ad.adId] || emptyInsights(),
+                adAccountId: ad.adAccountId,
+                adAccountName: adAccountIdToName[ad.adAccountId] || "",
+                campaignId: ad.campaignId,
+                campaignName: campaignIdToName[ad.campaignId] || "",
               })),
             };
           });
@@ -292,6 +316,8 @@ router.get("/:tokenId", async (req, res) => {
             ...campaign,
             type: "campaign",
             metrics: campMetrics,
+            adAccountId: campaign.adAccountId,
+            adAccountName: adAccountIdToName[campaign.adAccountId] || "",
             children,
           };
         })
