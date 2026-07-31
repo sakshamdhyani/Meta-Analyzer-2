@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { fetchTokens } from "../lib/api";
 import { fetchInsights } from "../lib/api";
 import { useApp } from "../context/AppContext";
 import MetricsGrid from "../components/ui/MetricsGrid";
-import TreeNode from "../components/ui/TreeNode";
+import CampaignTable from "../components/ui/CampaignTable";
 import { LoadingSpinner, EmptyState, ErrorMessage } from "../components/ui/Feedback";
 import { formatCurrency } from "../lib/utils";
 
@@ -16,7 +16,6 @@ export default function Insights() {
   const [since, setSince] = useState("");
   const [until, setUntil] = useState("");
   const [selectedAccountIds, setSelectedAccountIds] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
 
   const selectedToken = tokens.find((t) => t._id === selectedTokenId);
   const accounts = selectedToken?.adAccounts || [];
@@ -51,31 +50,23 @@ export default function Insights() {
     setUntil(today.toISOString().slice(0, 10));
   }, []);
 
-  // Only fetch when the user clicks Refresh — never auto-fetch on mount
-
   const toggleAccount = (id) => {
     setSelectedAccountIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  const selectedMetrics = data?.hierarchy?.find((c) => {
-    const cid = c.campaignId;
-    const findChild = (node) => {
-      if (node.campaignId === selectedId) return node;
-      if (node.children) {
-        for (const child of node.children) {
-          const r = findChild(child);
-          if (r) return r;
-        }
-      }
-      return null;
-    };
-    return findChild(c);
-  });
+  // Build a map of adAccountId → currency from the selected token's linked accounts
+  const currencyMap = useMemo(() => {
+    const map = {};
+    accounts.forEach((a) => {
+      if (a.currency) map[a.adAccountId] = a.currency;
+    });
+    return map;
+  }, [accounts]);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Insights</h1>
         <p className="text-sm text-slate-500 mt-0.5">Performance metrics across your ad accounts</p>
@@ -142,7 +133,7 @@ export default function Insights() {
               Combined Performance
               <span className="text-xs text-slate-400 ml-2">{data?.combined?.since} → {data?.combined?.until}</span>
             </h3>
-            <MetricsGrid metrics={data?.combined} />
+            <MetricsGrid metrics={data?.combined} currency={data?.accounts?.[0]?.currency || "USD"} />
           </div>
 
           {/* Per-account */}
@@ -184,23 +175,7 @@ export default function Insights() {
 
           {/* Hierarchy with metrics */}
           {data?.hierarchy?.length > 0 && (
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <div className="card !p-2">
-                  {data.hierarchy.map((campaign) => (
-                    <TreeNode key={campaign.campaignId} node={campaign} selectedId={selectedId} onSelect={(id) => setSelectedId(id)} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                {selectedMetrics && (
-                  <div className="card space-y-3">
-                    <h3 className="font-medium text-slate-900">{selectedMetrics.name}</h3>
-                    <MetricsGrid metrics={selectedMetrics.metrics} compact />
-                  </div>
-                )}
-              </div>
-            </div>
+            <CampaignTable tree={data.hierarchy} currencyMap={currencyMap} />
           )}
         </div>
       )}

@@ -18,9 +18,7 @@ export function formatCurrency(n, currency = "USD") {
 
 export function formatNumber(n) {
   if (n == null || isNaN(n)) return "—";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
+  return new Intl.NumberFormat("en-US").format(n);
 }
 
 export function formatPercent(n) {

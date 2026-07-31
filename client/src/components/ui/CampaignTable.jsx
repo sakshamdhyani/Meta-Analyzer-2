@@ -86,7 +86,7 @@ const TYPE_ICONS = {
 function ExpandedRow({ node, currency = "USD", onSelectDetail }) {
   const tc = TYPE_CONFIG[node.type];
   const m = node.metrics || {};
-  const id = node.campaignId || node.adsetId || node.adId;
+  const id = node.adId || node.adsetId || node.campaignId;
   const thumb = node.type === "ad" ? node.thumbnailUrl : null;
 
   /* build a 2-col key/value list */
@@ -313,7 +313,7 @@ export default function CampaignTable({ tree, currencyMap = {}, onSelect }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {sorted.map((row, idx) => {
-              const id = row.campaignId || row.adsetId || row.adId;
+              const id = row.adId || row.adsetId || row.campaignId;
               const isExpanded = expandedId === id;
               const tc = TYPE_CONFIG[row.type];
               const m = row.metrics || {};
