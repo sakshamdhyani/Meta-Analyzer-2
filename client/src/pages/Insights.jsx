@@ -136,6 +136,56 @@ export default function Insights() {
             <MetricsGrid metrics={data?.combined} currency={data?.accounts?.[0]?.currency || "USD"} />
           </div>
 
+          {/* Shiprocket orders, same date window as FB combined */}
+          {data?.shiprocket && !data.shiprocket.error && (
+            <div className="card">
+              <h3 className="text-sm font-medium text-slate-700 mb-3">
+                Shiprocket Orders
+                <span className="text-xs text-slate-400 ml-2">
+                  {data.shiprocket.since} → {data.shiprocket.until}
+                </span>
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                <div>
+                  <div className="text-xs text-slate-500">Total Orders</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {data.shiprocket.totalOrders.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">Total Revenue</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {formatCurrency(data.shiprocket.totalRevenue, "INR")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">Avg Order Value</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {formatCurrency(data.shiprocket.avgOrderValue, "INR")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">Prepaid</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {data.shiprocket.prepaidOrders} ({formatCurrency(data.shiprocket.prepaidRevenue, "INR")})
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">COD</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {data.shiprocket.codOrders} ({formatCurrency(data.shiprocket.codRevenue, "INR")})
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {data?.shiprocket?.error && (
+            <div className="card text-sm text-red-500">
+              Shiprocket data unavailable: {data.shiprocket.error}
+            </div>
+          )}
+
           {/* Per-account */}
           {data?.accounts?.length > 0 && (
             <div className="card">

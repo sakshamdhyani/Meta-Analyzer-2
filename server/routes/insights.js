@@ -4,6 +4,7 @@ import AdAccount from "../models/AdAccount.js";
 import Campaign from "../models/Campaign.js";
 import AdSet from "../models/AdSet.js";
 import Ad from "../models/Ad.js";
+import { fetchShiprocketOrdersInRange, summarizeShiprocketOrders } from "../services/shiprocketService.js";
 
 const router = express.Router();
 
@@ -171,21 +172,59 @@ router.get("/:tokenId", async (req, res) => {
 
     const adAccounts = await AdAccount.find(accountsQuery).lean();
     if (adAccounts.length === 0) {
-      return res.json({ success: true, data: { combined: { ...emptyInsights(), since: dateSince, until: dateUntil }, accounts: [], hierarchy: [] } });
+      // Even with no ad accounts, still return Shiprocket data for the date window
+      let shiprocket;
+      try {
+        const orders = await fetchShiprocketOrdersInRange(dateSince, dateUntil);
+        shiprocket = { ...summarizeShiprocketOrders(orders), since: dateSince, until: dateUntil };
+      } catch (err) {
+        console.error("Shiprocket fetch failed:", err?.response?.data || err.message);
+        shiprocket = { error: err.message || "Shiprocket fetch failed", since: dateSince, until: dateUntil };
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          combined: { ...emptyInsights(), since: dateSince, until: dateUntil },
+          accounts: [],
+          hierarchy: [],
+          shiprocket,
+        },
+      });
     }
 
-    // ── Per-account insights ──
-    const accountInsightsResults = await Promise.allSettled(
-      adAccounts.map((acc) =>
-        fetchInsightsForAccount(
-          acc.adAccountId.startsWith("act_") ? acc.adAccountId : `act_${acc.adAccountId}`,
-          token.accessToken,
-          dateSince,
-          dateUntil,
-          "account"
+    // ── Per-account insights (FB) + Shiprocket orders, same date window, run in parallel ──
+    const [accountInsightsResults, shiprocketSettled] = await Promise.all([
+      Promise.allSettled(
+        adAccounts.map((acc) =>
+          fetchInsightsForAccount(
+            acc.adAccountId.startsWith("act_") ? acc.adAccountId : `act_${acc.adAccountId}`,
+            token.accessToken,
+            dateSince,
+            dateUntil,
+            "account"
+          )
         )
-      )
-    );
+      ),
+      Promise.allSettled([fetchShiprocketOrdersInRange(dateSince, dateUntil)]),
+    ]);
+
+    let shiprocket;
+    const shiprocketResult = shiprocketSettled[0];
+    if (shiprocketResult.status === "fulfilled") {
+      shiprocket = {
+        ...summarizeShiprocketOrders(shiprocketResult.value),
+        since: dateSince,
+        until: dateUntil,
+      };
+    } else {
+      console.error("Shiprocket fetch failed:", shiprocketResult.reason?.response?.data || shiprocketResult.reason?.message);
+      shiprocket = {
+        error: shiprocketResult.reason?.message || "Shiprocket fetch failed",
+        since: dateSince,
+        until: dateUntil,
+      };
+    }
 
     const accountsData = [];
     const accountIdToInsights = {};
@@ -331,6 +370,7 @@ router.get("/:tokenId", async (req, res) => {
         accounts: accountsData,
         mixedCurrencies,
         hierarchy,
+        shiprocket,
       },
     });
   } catch (err) {
